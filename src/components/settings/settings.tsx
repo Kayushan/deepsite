@@ -2,7 +2,17 @@ import { useState } from "react";
 import classNames from "classnames";
 import Login from "../login/login";
 
-function Settings() {
+function Settings({
+  aiProvider,
+  setAiProvider,
+  openRouterModel,
+  setOpenRouterModel,
+}: {
+  aiProvider: string | undefined;
+  setAiProvider: (value: string) => void;
+  openRouterModel: string | undefined;
+  setOpenRouterModel: (value: string) => void;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -30,7 +40,48 @@ function Settings() {
           }
         )}
       >
-        <Login />
+        <div className="p-4">
+          <h3 className="text-lg font-semibold text-gray-900">Settings</h3>
+          <div className="mt-4">
+            <label
+              htmlFor="ai-provider"
+              className="block text-sm font-medium text-gray-700"
+            >
+              AI Provider
+            </label>
+            <select
+              id="ai-provider"
+              name="ai-provider"
+              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+              value={aiProvider}
+              onChange={(e) => setAiProvider(e.target.value)}
+            >
+              <option value="huggingface">Hugging Face</option>
+              <option value="openrouter">OpenRouter</option>
+            </select>
+          </div>
+          {aiProvider === "openrouter" && (
+            <div className="mt-4">
+              <label
+                htmlFor="openrouter-model"
+                className="block text-sm font-medium text-gray-700"
+              >
+                OpenRouter Model
+              </label>
+              <input
+                type="text"
+                name="openrouter-model"
+                id="openrouter-model"
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                value={openRouterModel}
+                onChange={(e) => setOpenRouterModel(e.target.value)}
+              />
+            </div>
+          )}
+          <div className="mt-4">
+            <Login />
+          </div>
+        </div>
       </div>
     </div>
   );

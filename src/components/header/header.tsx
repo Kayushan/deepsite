@@ -2,13 +2,22 @@ import { ReactNode } from "react";
 import { MdAdd } from "react-icons/md";
 
 import Logo from "@/assets/logo.svg";
+import Settings from "../settings/settings";
 
 function Header({
   onReset,
   children,
+  aiProvider,
+  setAiProvider,
+  openRouterModel,
+  setOpenRouterModel,
 }: {
   onReset: () => void;
   children?: ReactNode;
+  aiProvider: string | undefined;
+  setAiProvider: (value: string) => void;
+  openRouterModel: string | undefined;
+  setOpenRouterModel: (value: string) => void;
 }) {
   return (
     <header className="border-b border-gray-900 px-3 lg:px-6 py-2 flex justify-between items-center">
@@ -33,7 +42,15 @@ function Header({
           Imagine and Share in 1-Click
         </p>
       </div>
-      {children}
+      <div className="flex items-center gap-4">
+        {children}
+        <Settings
+          aiProvider={aiProvider}
+          setAiProvider={setAiProvider}
+          openRouterModel={openRouterModel}
+          setOpenRouterModel={setOpenRouterModel}
+        />
+      </div>
     </header>
   );
 }

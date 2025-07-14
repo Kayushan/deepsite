@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import { createRepo, uploadFiles, whoAmI } from "@huggingface/hub";
 import { InferenceClient } from "@huggingface/inference";
 import bodyParser from "body-parser";
+import fetch from "node-fetch";
 
 import checkUser from "./middlewares/checkUser.js";
 
@@ -276,6 +277,80 @@ app.post("/api/ask-ai", async (req, res) => {
       });
     } else {
       // Otherwise end the stream
+      res.end();
+    }
+  }
+});
+
+app.post("/api/ask-ai-openrouter", async (req, res) => {
+  const { prompt, html, previousPrompt, model } = req.body;
+  if (!prompt || !model) {
+    return res.status(400).send({
+      ok: false,
+      message: "Missing required fields",
+    });
+  }
+
+  // Set up response headers for streaming
+  res.setHeader("Content-Type", "text/plain");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  try {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "system",
+            content:
+              "ONLY USE HTML, CSS AND JAVASCRIPT. If you want to use ICON make sure to import the library first. Try to create the best UI possible by using only HTML, CSS and JAVASCRIPT. Also, try to ellaborate as much as you can, to create something unique. ALWAYS GIVE THE RESPONSE INTO A SINGLE HTML FILE",
+          },
+          ...(previousPrompt
+            ? [
+                {
+                  role: "user",
+                  content: previousPrompt,
+                },
+              ]
+            : []),
+          ...(html
+            ? [
+                {
+                  role: "assistant",
+                  content: `The current code is: ${html}.`,
+                },
+              ]
+            : []),
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        stream: true,
+      }),
+    });
+
+    response.body.on("data", (chunk) => {
+      res.write(chunk);
+    });
+
+    response.body.on("end", () => {
+      res.end();
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    if (!res.headersSent) {
+      res.status(500).send({
+        ok: false,
+        message: "An error occurred while communicating with OpenRouter.",
+      });
+    } else {
       res.end();
     }
   }

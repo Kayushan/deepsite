@@ -26,6 +26,8 @@ function App() {
   const [html, setHtml] = useState((htmlStorage as string) ?? defaultHTML);
   const [isAiWorking, setisAiWorking] = useState(false);
   const [auth, setAuth] = useState<Auth | undefined>(undefined);
+  const [aiProvider, setAiProvider] = useLocalStorage("ai_provider", "huggingface");
+  const [openRouterModel, setOpenRouterModel] = useLocalStorage("openrouter_model", "google/gemma-7b-it");
 
   const fetchMe = async () => {
     const res = await fetch("/api/@me");
@@ -153,6 +155,10 @@ function App() {
             );
           }
         }}
+        aiProvider={aiProvider}
+        setAiProvider={setAiProvider}
+        openRouterModel={openRouterModel}
+        setOpenRouterModel={setOpenRouterModel}
       >
         <DeployButton html={html} error={error} auth={auth} />
       </Header>
@@ -201,6 +207,8 @@ function App() {
                 editorRef.current?.getModel()?.getLineCount() ?? 0
               );
             }}
+            aiProvider={aiProvider}
+            openRouterModel={openRouterModel}
           />
         </div>
         <div

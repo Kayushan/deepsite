@@ -14,12 +14,16 @@ function AskAI({
   onScrollToBottom,
   isAiWorking,
   setisAiWorking,
+  aiProvider,
+  openRouterModel,
 }: {
   html: string;
   setHtml: (html: string) => void;
   onScrollToBottom: () => void;
   isAiWorking: boolean;
   setisAiWorking: React.Dispatch<React.SetStateAction<boolean>>;
+  aiProvider: string | undefined;
+  openRouterModel: string | undefined;
 }) {
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
@@ -35,24 +39,35 @@ function AskAI({
     let contentResponse = "";
     let lastRenderTime = 0;
     try {
-      const request = await fetch("/api/ask-ai", {
+      const url = aiProvider === "openrouter" ? "/api/ask-ai-openrouter" : "/api/ask-ai";
+      const body =
+        aiProvider === "openrouter"
+          ? {
+              prompt,
+              ...(html === defaultHTML ? {} : { html }),
+              ...(previousPrompt ? { previousPrompt } : {}),
+              model: openRouterModel,
+            }
+          : {
+              prompt,
+              ...(html === defaultHTML ? {} : { html }),
+              ...(previousPrompt ? { previousPrompt } : {}),
+            };
+
+      const request = await fetch(url, {
         method: "POST",
-        body: JSON.stringify({
-          prompt,
-          ...(html === defaultHTML ? {} : { html }),
-          ...(previousPrompt ? { previousPrompt } : {}),
-        }),
+        body: JSON.stringify(body),
         headers: {
           "Content-Type": "application/json",
         },
       });
+
       if (request && request.body) {
         if (!request.ok) {
           const res = await request.json();
           if (res.openLogin) {
             setOpen(true);
           } else {
-            // don't show toast if it's a login error
             toast.error(res.message);
           }
           setisAiWorking(false);
@@ -71,7 +86,6 @@ function AskAI({
             setHasAsked(true);
             audio.play();
 
-            // Now we have the complete HTML including </html>, so set it to be sure
             const finalDoc = contentResponse.match(
               /<!DOCTYPE html>[\s\S]*<\/html>/
             )?.[0];
@@ -86,13 +100,11 @@ function AskAI({
           contentResponse += chunk;
           const newHtml = contentResponse.match(/<!DOCTYPE html>[\s\S]*/)?.[0];
           if (newHtml) {
-            // Force-close the HTML tag so the iframe doesn't render half-finished markup
             let partialDoc = newHtml;
             if (!partialDoc.includes("</html>")) {
               partialDoc += "\n</html>";
             }
 
-            // Throttle the re-renders to avoid flashing/flicker
             const now = Date.now();
             if (now - lastRenderTime > 300) {
               setHtml(partialDoc);
@@ -108,8 +120,6 @@ function AskAI({
 
         read();
       }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       setisAiWorking(false);
       toast.error(error.message);
