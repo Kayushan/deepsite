@@ -9,16 +9,16 @@ import { defaultHTML } from "../../utils/consts";
 import SuccessSound from "./../../assets/success.mp3";
 
 function AskAI({
-  html,
-  setHtml,
+  files,
+  setFiles,
   onScrollToBottom,
   isAiWorking,
   setisAiWorking,
   aiProvider,
   openRouterModel,
 }: {
-  html: string;
-  setHtml: (html: string) => void;
+  files: { path: string; content: string }[];
+  setFiles: (files: { path: string; content: string }[]) => void;
   onScrollToBottom: () => void;
   isAiWorking: boolean;
   setisAiWorking: React.Dispatch<React.SetStateAction<boolean>>;
@@ -36,22 +36,20 @@ function AskAI({
     if (isAiWorking || !prompt.trim()) return;
     setisAiWorking(true);
 
-    let contentResponse = "";
-    let lastRenderTime = 0;
     try {
       const url = aiProvider === "openrouter" ? "/api/ask-ai-openrouter" : "/api/ask-ai";
       const body =
         aiProvider === "openrouter"
           ? {
               prompt,
-              ...(html === defaultHTML ? {} : { html }),
-              ...(previousPrompt ? { previousPrompt } : {}),
+              files,
+              previousPrompt,
               model: openRouterModel,
             }
           : {
               prompt,
-              ...(html === defaultHTML ? {} : { html }),
-              ...(previousPrompt ? { previousPrompt } : {}),
+              files,
+              previousPrompt,
             };
 
       const request = await fetch(url, {
@@ -62,70 +60,35 @@ function AskAI({
         },
       });
 
-      if (request && request.body) {
-        if (!request.ok) {
-          const res = await request.json();
-          if (res.openLogin) {
-            setOpen(true);
-          } else {
-            toast.error(res.message);
-          }
-          setisAiWorking(false);
-          return;
+      if (!request.ok) {
+        const res = await request.json();
+        if (res.openLogin) {
+          setOpen(true);
+        } else {
+          toast.error(res.message);
         }
-        const reader = request.body.getReader();
-        const decoder = new TextDecoder("utf-8");
+        setisAiWorking(false);
+        return;
+      }
 
-        const read = async () => {
-          const { done, value } = await reader.read();
-          if (done) {
-            toast.success("AI responded successfully");
-            setPrompt("");
-            setPreviousPrompt(prompt);
-            setisAiWorking(false);
-            setHasAsked(true);
-            audio.play();
-
-            const finalDoc = contentResponse.match(
-              /<!DOCTYPE html>[\s\S]*<\/html>/
-            )?.[0];
-            if (finalDoc) {
-              setHtml(finalDoc);
-            }
-
-            return;
-          }
-
-          const chunk = decoder.decode(value, { stream: true });
-          contentResponse += chunk;
-          const newHtml = contentResponse.match(/<!DOCTYPE html>[\s\S]*/)?.[0];
-          if (newHtml) {
-            let partialDoc = newHtml;
-            if (!partialDoc.includes("</html>")) {
-              partialDoc += "\n</html>";
-            }
-
-            const now = Date.now();
-            if (now - lastRenderTime > 300) {
-              setHtml(partialDoc);
-              lastRenderTime = now;
-            }
-
-            if (partialDoc.length > 200) {
-              onScrollToBottom();
-            }
-          }
-          read();
-        };
-
-        read();
+      const response = await request.json();
+      if (response.files) {
+        setFiles(response.files);
+        toast.success("AI responded successfully");
+        setPrompt("");
+        setPreviousPrompt(prompt);
+        setHasAsked(true);
+        audio.play();
+      } else {
+        toast.error("The AI did not return any files.");
       }
     } catch (error: any) {
-      setisAiWorking(false);
       toast.error(error.message);
       if (error.openLogin) {
         setOpen(true);
       }
+    } finally {
+      setisAiWorking(false);
     }
   };
 

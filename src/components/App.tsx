@@ -23,7 +23,8 @@ function App() {
 
   const [isResizing, setIsResizing] = useState(false);
   const [error, setError] = useState(false);
-  const [html, setHtml] = useState((htmlStorage as string) ?? defaultHTML);
+  const [files, setFiles] = useState([{ path: "index.html", content: (htmlStorage as string) ?? defaultHTML }]);
+  const [activeFile, setActiveFile] = useState("index.html");
   const [isAiWorking, setisAiWorking] = useState(false);
   const [auth, setAuth] = useState<Auth | undefined>(undefined);
   const [aiProvider, setAiProvider] = useLocalStorage("ai_provider", "huggingface");
@@ -175,31 +176,53 @@ function App() {
           }}
         >
           <Tabs />
-          <Editor
-            language="html"
-            theme="vs-dark"
-            className={classNames(
-              "h-[calc(30dvh-41px)] lg:h-[calc(100dvh-96px)]",
-              {
+          <div className="flex h-[calc(100dvh-96px)]">
+            <div className="w-1/4 bg-gray-900 p-4">
+              <h3 className="text-white text-lg font-semibold">Files</h3>
+              <ul>
+                {files.map((file) => (
+                  <li
+                    key={file.path}
+                    className={classNames("text-white cursor-pointer", {
+                      "font-bold": file.path === activeFile,
+                    })}
+                    onClick={() => setActiveFile(file.path)}
+                  >
+                    {file.path}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Editor
+              language="html"
+              theme="vs-dark"
+              className={classNames("h-full", {
                 "pointer-events-none": isAiWorking,
-              }
-            )}
-            value={html}
-            onValidate={(markers) => {
-              if (markers?.length > 0) {
-                setError(true);
-              }
-            }}
-            onChange={(value) => {
-              const newValue = value ?? "";
-              setHtml(newValue);
-              setError(false);
-            }}
-            onMount={(editor) => (editorRef.current = editor)}
-          />
+              })}
+              path={activeFile}
+              value={files.find((file) => file.path === activeFile)?.content}
+              onValidate={(markers) => {
+                if (markers?.length > 0) {
+                  setError(true);
+                }
+              }}
+              onChange={(value) => {
+                const newValue = value ?? "";
+                setFiles(
+                  files.map((file) =>
+                    file.path === activeFile
+                      ? { ...file, content: newValue }
+                      : file
+                  )
+                );
+                setError(false);
+              }}
+              onMount={(editor) => (editorRef.current = editor)}
+            />
+          </div>
           <AskAI
-            html={html}
-            setHtml={setHtml}
+            files={files}
+            setFiles={setFiles}
             isAiWorking={isAiWorking}
             setisAiWorking={setisAiWorking}
             onScrollToBottom={() => {
@@ -216,7 +239,7 @@ function App() {
           className="bg-gray-700 hover:bg-blue-500 w-2 cursor-col-resize h-[calc(100dvh-54px)] max-lg:hidden"
         />
         <Preview
-          html={html}
+          html={files.find((file) => file.path === "index.html")?.content ?? ""}
           isResizing={isResizing}
           isAiWorking={isAiWorking}
           ref={preview}

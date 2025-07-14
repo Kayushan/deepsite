@@ -222,7 +222,7 @@ app.post("/api/ask-ai", async (req, res) => {
         {
           role: "system",
           content:
-            "ONLY USE HTML, CSS AND JAVASCRIPT. If you want to use ICON make sure to import the library first. Try to create the best UI possible by using only HTML, CSS and JAVASCRIPT. Also, try to ellaborate as much as you can, to create something unique. ALWAYS GIVE THE RESPONSE INTO A SINGLE HTML FILE",
+            "You are a helpful assistant that can create and modify files and folders. When asked to create a project, you should respond with a JSON object containing an array of files to be created. Each file object in the array should have a `path` and `content` property. For example: `{\"files\": [{\"path\": \"index.html\", \"content\": \"<h1>Hello, World!</h1>\"}, {\"path\": \"css/style.css\", \"content\": \"h1 { color: red; }\"}]}`. ONLY USE HTML, CSS, AND JAVASCRIPT.",
         },
         ...(previousPrompt
           ? [
@@ -248,25 +248,21 @@ app.post("/api/ask-ai", async (req, res) => {
       max_tokens: 12_000,
     });
 
-    while (true) {
-      const { done, value } = await chatCompletion.next();
-      if (done) {
-        break;
-      }
-      const chunk = value.choices[0]?.delta?.content;
-      if (chunk) {
-        res.write(chunk);
-        completeResponse += chunk;
-
-        // Break when HTML is complete
-        if (completeResponse.includes("</html>")) {
-          break;
-        }
-      }
+    let fullResponse = "";
+    for await (const chunk of chatCompletion) {
+      fullResponse += chunk.choices[0]?.delta?.content || "";
     }
 
-    // End the response stream
-    res.end();
+    try {
+      const jsonResponse = JSON.parse(fullResponse);
+      res.json(jsonResponse);
+    } catch (error) {
+      res.status(500).json({
+        ok: false,
+        message: "Failed to parse AI response as JSON.",
+        response: fullResponse,
+      });
+    }
   } catch (error) {
     console.error("Error:", error);
     // If we haven't sent a response yet, send an error
@@ -309,7 +305,7 @@ app.post("/api/ask-ai-openrouter", async (req, res) => {
           {
             role: "system",
             content:
-              "ONLY USE HTML, CSS AND JAVASCRIPT. If you want to use ICON make sure to import the library first. Try to create the best UI possible by using only HTML, CSS and JAVASCRIPT. Also, try to ellaborate as much as you can, to create something unique. ALWAYS GIVE THE RESPONSE INTO A SINGLE HTML FILE",
+            "You are a helpful assistant that can create and modify files and folders. When asked to create a project, you should respond with a JSON object containing an array of files to be created. Each file object in the array should have a `path` and `content` property. For example: `{\"files\": [{\"path\": \"index.html\", \"content\": \"<h1>Hello, World!</h1>\"}, {\"path\": \"css/style.css\", \"content\": \"h1 { color: red; }\"}]}`. ONLY USE HTML, CSS, AND JAVASCRIPT.",
           },
           ...(previousPrompt
             ? [
@@ -336,12 +332,22 @@ app.post("/api/ask-ai-openrouter", async (req, res) => {
       }),
     });
 
+    let fullResponse = "";
     response.body.on("data", (chunk) => {
-      res.write(chunk);
+      fullResponse += chunk.toString();
     });
 
     response.body.on("end", () => {
-      res.end();
+      try {
+        const jsonResponse = JSON.parse(fullResponse);
+        res.json(jsonResponse);
+      } catch (error) {
+        res.status(500).json({
+          ok: false,
+          message: "Failed to parse AI response as JSON.",
+          response: fullResponse,
+        });
+      }
     });
   } catch (error) {
     console.error("Error:", error);
