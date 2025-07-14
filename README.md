@@ -60,6 +60,16 @@ npm config set https-proxy http://your-proxy-url:your-proxy-port
 
 Replace `your-proxy-url` and `your-proxy-port` with the appropriate values for your proxy server.
 
+### Vite Error
+
+If you encounter a Vite error related to PostCSS and `tailwindcss`, you can resolve it by installing `tailwindcss` separately:
+
+```bash
+npm install tailwindcss
+```
+
+Then, restart the development server.
+
 ## Contributing
 
 If you'd like to contribute to DeepSite, please fork the repository and submit a pull request. We'd love to have your help!
