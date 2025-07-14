@@ -33,6 +33,33 @@ This will start a local development server at `http://localhost:3000`.
 *   **File explorer:** DeepSite has a built-in file explorer, so you can easily navigate between your files.
 *   **AI assistant:** DeepSite has an AI assistant that can help you with your code. Just type a prompt, and the AI will generate the code for you.
 
+## Troubleshooting
+
+If you encounter any issues during the installation process, please try the following steps:
+
+1.  **Run Command Prompt as an Administrator:**
+    *   Click the **Start** button and type "Command Prompt".
+    *   Right-click on "Command Prompt" and select "Run as administrator".
+2.  **Clear the npm Cache:**
+    *   In the administrator Command Prompt, run the following command:
+        ```bash
+        npm cache clean --force
+        ```
+3.  **Install the Dependencies:**
+    *   Navigate to the `deepsite` directory and run the following command:
+        ```bash
+        npm install
+        ```
+
+If you are still having issues after trying these steps, you may need to configure your proxy settings. You can do this by running the following commands:
+
+```bash
+npm config set proxy http://your-proxy-url:your-proxy-port
+npm config set https-proxy http://your-proxy-url:your-proxy-port
+```
+
+Replace `your-proxy-url` and `your-proxy-port` with the appropriate values for your proxy server.
+
 ## Contributing
 
 If you'd like to contribute to DeepSite, please fork the repository and submit a pull request. We'd love to have your help!
