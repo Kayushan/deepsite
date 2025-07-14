@@ -62,13 +62,27 @@ Replace `your-proxy-url` and `your-proxy-port` with the appropriate values for y
 
 ### Vite Error
 
-If you encounter a Vite error related to PostCSS and `tailwindcss`, you can resolve it by installing `tailwindcss` separately:
+If you encounter a Vite error related to PostCSS and `tailwindcss`, you can resolve it by following these steps:
 
-```bash
-npm install tailwindcss
-```
-
-Then, restart the development server.
+1.  **Delete `node_modules` and `package-lock.json`:**
+    *   In your file explorer, navigate to the `deepsite` directory.
+    *   Delete the `node_modules` directory and the `package-lock.json` file.
+2.  **Clear the npm Cache:**
+    *   In the administrator Command Prompt, run the following command:
+        ```bash
+        npm cache clean --force
+        ```
+3.  **Install the Dependencies:**
+    *   In the administrator Command Prompt, navigate to the `deepsite` directory and run the following command:
+        ```bash
+        npm install
+        ```
+4.  **Restart the Development Server:**
+    *   If the development server is still running, stop it by pressing `Ctrl+C`.
+    *   Restart the development server by running the following command:
+        ```bash
+        npm run dev
+        ```
 
 ## Contributing
 
